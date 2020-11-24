@@ -29,7 +29,7 @@ class FibRequestHandler implements IMessageHandler<Integer> {
             long value = fibs.get(i - 2) + fibs.get(i - 1);
             fibs.add(value);
         }
-        ctx.writeAndFlush(new MessageOutput(requestId, "fib_res", fibs.get(n)));
+        ctx.writeAndFlush(new MessageOutput("fib_res", requestId, fibs.get(n)));
     }
 
 }
@@ -46,7 +46,7 @@ class ExpRequestHandler implements IMessageHandler<ExpRequest> {
             res *= base;
         }
         long cost = System.nanoTime() - start;
-        ctx.writeAndFlush(new MessageOutput(requestId, "exp_res", new ExpResponse(res, cost)));
+        ctx.writeAndFlush(new MessageOutput("exp_res", requestId, new ExpResponse(res, cost)));
     }
 
 }

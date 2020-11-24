@@ -27,7 +27,6 @@ public class MessageEncoder extends MessageToMessageEncoder<MessageOutput> {
         writeStr(byteBuf, message.getType());
         writeStr(byteBuf, JSONObject.toJSONString(message.getPayload()));
         list.add(byteBuf);
-
     }
 
     public void writeStr(ByteBuf buf, String s){

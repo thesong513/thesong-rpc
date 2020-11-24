@@ -20,7 +20,7 @@ public class MessageInput {
     }
 
     public String getType(){
-        return type;
+        return this.type;
     }
 
     public String getRequestId(){
@@ -29,7 +29,7 @@ public class MessageInput {
 
 
     public <T> T getPayload(Class<T> clazz){
-        if(payload==null){
+        if (payload == null) {
             return null;
         }
         return JSON.parseObject(payload, clazz);

@@ -54,7 +54,7 @@ public class RpcClient {
             started = true;
         }
         String requestId = RequestId.next();
-        MessageOutput output = new MessageOutput(requestId, type, payload);
+        MessageOutput output = new MessageOutput( type, requestId, payload);
         return collector.send(output);
     }
 

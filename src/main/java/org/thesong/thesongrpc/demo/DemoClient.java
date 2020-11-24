@@ -13,7 +13,8 @@ public class DemoClient {
     private RpcClient client;
     public DemoClient(RpcClient client) {
         this.client = client;
-        this.client.rpc("fib_res", Long.class).rpc("exp_res", ExpResponse.class);
+        this.client.rpc("fib_res", Long.class)
+                .rpc("exp_res", ExpResponse.class);
     }
 
     public long fib(int n) {

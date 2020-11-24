@@ -6,6 +6,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
 import org.thesong.thesongrpc.common.*;
 
+import java.lang.management.PlatformLoggingMXBean;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -29,19 +30,9 @@ public class MessageCollector extends ChannelInboundHandlerAdapter {
     public MessageCollector(MessageHandlers handlers, MessageRegistry messageRegistry, int workerThreads) {
         ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(1000);
         ThreadFactory threadFactory = new ThreadFactory() {
-
-            /**
-             * Constructs a new {@code Thread}.  Implementations may also initialize
-             * priority, name, daemon status, {@code ThreadGroup}, etc.
-             *
-             * @param r a runnable to be executed by new thread instance
-             * @return constructed thread, or {@code null} if the request to
-             * create a thread is rejected
-             */
             AtomicInteger seq = new AtomicInteger();
-
+            //启动线程
             @Override
-
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
                 thread.setName("rpc-" + seq.getAndIncrement());
@@ -76,7 +67,7 @@ public class MessageCollector extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object message) {
         if (message instanceof MessageInput) {
             this.executor.execute(() -> {
-                this.handleMessage(ctx,(MessageInput) message);
+                this.handleMessage(ctx, (MessageInput) message);
             });
         }
     }
@@ -93,7 +84,7 @@ public class MessageCollector extends ChannelInboundHandlerAdapter {
         @SuppressWarnings("unchecked")
         IMessageHandler<Object> handler = (IMessageHandler<Object>) handlers.get(input.getType());
         if (handler != null) {
-            handler.handle(ctx, input.getRequestId(), input);
+            handler.handle(ctx, input.getRequestId(), payload);
         } else {
             handlers.defaultHandler().handle(ctx, input.getRequestId(), input);
         }
