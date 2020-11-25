@@ -5,11 +5,15 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import io.netty.handler.codec.LengthFieldPrepender;
-import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
+import org.thesong.thesongrpc.common.RpcDecoder;
+import org.thesong.thesongrpc.common.RpcEncoder;
+import org.thesong.thesongrpc.common.RpcRequest;
+import org.thesong.thesongrpc.common.RpcResponse;
+import org.thesong.thesongrpc.common.SerializerImpl.JSONSerializer;
 
+import javax.annotation.PreDestroy;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -19,38 +23,32 @@ import java.util.Map;
 
 /**
  * @Author thesong
- * @Date 2020/11/24 13:57
+ * @Date 2020/11/25 21:18
  * @Version 1.0
  * @Describe
  */
-
 @Slf4j
-public class RpcServer implements Server{
+public class RpcServer {
 
-    private String ip;
+    private EventLoopGroup ioGroup;
+    private EventLoopGroup workerGroup;
+    private Channel channel;
+    private String host;
     private int port;
-    private int ioThreads;
-    private int workerThreads;
 
-    private ServerBootstrap bootstrap;
-    private EventLoopGroup group;
-    private RpcServerHandler handler;
-    private boolean isRuning = false;
 
     private Map<String, Object> registerMap = new HashMap<>();
     private List<String> classCache = new ArrayList<>();
 
-    public RpcServer(String ip, int port, int ioThreads, int workerThreads){
-        this.ip = ip;
+    public RpcServer(String host, int port){
+        this.host = host;
         this.port = port;
-        this.ioThreads = ioThreads;
-        this.workerThreads = workerThreads;
     }
 
-    @Override
     public void publish(String basePackage) throws Exception {
         getProviderClass(basePackage);
         doRegister();
+        log.info("registe finished!");
     }
 
     private void getProviderClass(String basePackage) {
@@ -69,7 +67,6 @@ public class RpcServer implements Server{
         }
     }
 
-    @Override
     public void doRegister() throws Exception {
         if(classCache.size()==0){
             return;
@@ -81,50 +78,44 @@ public class RpcServer implements Server{
                 registerMap.put(interfaces[0].getName(), clazz.newInstance());
             }
         }
-
-    }
-
-    @Override
-    public boolean isRunning() {
-        return isRuning;
-    }
-
-    @Override
-    public int getPort() {
-        return port;
     }
 
 
-    public void start() throws Exception {
-        group = new NioEventLoopGroup(ioThreads);
-        bootstrap = new ServerBootstrap();
-        bootstrap.group(group);
-        handler = new RpcServerHandler(registerMap, workerThreads);
-        bootstrap.channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer<SocketChannel>() {
-            @Override
-            protected void initChannel(SocketChannel channel) {
-                ChannelPipeline pipeline = channel.pipeline();
-                pipeline.addLast(new LengthFieldBasedFrameDecoder(1024, 0, 2, 0, 2));
-                pipeline.addLast(new LengthFieldPrepender(2));
-                pipeline.addLast(handler);
+    public void start(){
+        ioGroup = new NioEventLoopGroup();
+        workerGroup = new NioEventLoopGroup();
+        ServerBootstrap serverBootstrap = new ServerBootstrap();
+        serverBootstrap.group(ioGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .option(ChannelOption.SO_BACKLOG,1024)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel socketChannel) throws Exception {
+                        ChannelPipeline pipeline = socketChannel.pipeline();
+                        pipeline.addLast(new RpcEncoder(RpcResponse.class, new JSONSerializer()));
+                        pipeline.addLast(new RpcDecoder(RpcRequest.class, new JSONSerializer()));
+                        pipeline.addLast();
+                    }
+                });
+        bind(serverBootstrap, host, port);
+    }
+
+    public void bind(final ServerBootstrap serverBootstrap ,String host, int port){
+        serverBootstrap.bind(host,port).addListener(future -> {
+            if(future.isSuccess()){
+                log.info("server is running @ {}:{}",host, port);
+            }else {
+                log.error("port [ {} ] bind failed!",port);
+                bind(serverBootstrap,host,port+1);
             }
         });
-        bootstrap.option(ChannelOption.SO_BACKLOG,100)
-                .option(ChannelOption.SO_REUSEADDR,true)
-                .childOption(ChannelOption.TCP_NODELAY,true)
-                .childOption(ChannelOption.SO_KEEPALIVE,true);
-
-        ChannelFuture future = bootstrap.bind(this.ip, this.port).sync();
-        log.info("server started @ {}:{}", ip, port);
-        this.isRuning=true;
-        future.channel().closeFuture().sync();
     }
 
-    @Override
-    public void stop() throws Exception {
-        group.shutdownGracefully().sync();
-        log.info("server stoped");
-        handler.closeGracefully();
+    @PreDestroy
+    public void close() throws InterruptedException {
+        ioGroup.shutdownGracefully().sync();
+        workerGroup.shutdownGracefully().sync();
+        log.info("close server");
     }
 
 }

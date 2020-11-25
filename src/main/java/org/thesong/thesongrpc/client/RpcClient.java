@@ -1,10 +1,20 @@
 package org.thesong.thesongrpc.client;
 
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
+import org.thesong.thesongrpc.common.RpcDecoder;
+import org.thesong.thesongrpc.common.RpcEncoder;
+import org.thesong.thesongrpc.common.RpcRequest;
+import org.thesong.thesongrpc.common.RpcResponse;
+import org.thesong.thesongrpc.common.SerializerImpl.JSONSerializer;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import javax.annotation.PreDestroy;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Author thesong
@@ -14,6 +24,74 @@ import java.lang.reflect.Proxy;
  */
 @Slf4j
 public class RpcClient {
+    private EventLoopGroup eventLoopGroup;
+    private Channel channel;
+    private String host;
+    private int port;
+    private ClientHandler clientHandler;
+    private static final int MAX_RETRY=5;
 
+    public RpcClient(String host, int port){
+        this.host=host;
+        this.port=port;
+    }
+
+    public void connect(){
+        clientHandler = new ClientHandler();
+        eventLoopGroup = new NioEventLoopGroup();
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap.group(eventLoopGroup)
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.SO_KEEPALIVE,true)
+                .option(ChannelOption.TCP_NODELAY,true)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,5000)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel socketChannel) throws Exception {
+                        ChannelPipeline pipeline = socketChannel.pipeline();
+                        pipeline.addLast(new RpcEncoder(RpcRequest.class, new JSONSerializer()));
+                        pipeline.addLast(new RpcEncoder(RpcResponse.class, new JSONSerializer()));
+                        pipeline.addLast(clientHandler);
+                    }
+                });
+        connect(bootstrap, host, port,MAX_RETRY);
+    }
+
+    private void connect(Bootstrap bootstrap, String host, int port, int retry) {
+        ChannelFuture channelFuture = bootstrap.connect(host, port).addListener(future -> {
+            if(future.isSuccess()){
+                log.info("connect to server is success!");
+            }else if(retry==0){
+                log.error("The maximum number of connections has been reached! ");
+            }else {
+                int order = MAX_RETRY-retry+1;
+                int delay = 1<< order;
+                log.error("{} : fail connect, then will connect {} times ...",new Date(), order);
+                bootstrap.config().group().schedule(()->{
+                    connect(bootstrap,host,port,retry-1);
+                },delay, TimeUnit.SECONDS);
+            }
+        });
+        channel = channelFuture.channel();
+    }
+
+    public RpcResponse send(final RpcRequest rpcRequest){
+        try {
+            channel.writeAndFlush(rpcRequest).await().addListener(future -> {
+                if(future.isSuccess()){
+                    log.info("send success");
+                }
+            });
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+        return clientHandler.getRpcResponse(rpcRequest.getRequestId());
+    }
+
+    @PreDestroy
+    public void close(){
+        eventLoopGroup.shutdownGracefully();
+        channel.closeFuture().syncUninterruptibly();
+    }
 
 }
