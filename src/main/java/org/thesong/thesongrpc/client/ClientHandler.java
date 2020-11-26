@@ -10,7 +10,6 @@ import org.thesong.thesongrpc.common.RpcResponse;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @Author thesong
@@ -25,8 +24,18 @@ public class ClientHandler extends ChannelDuplexHandler {
     private final Map<String, DefaultFuture> futureMap = new ConcurrentHashMap<>();
 
     @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        log.info("连接成功");
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        log.info("连接断开");
+    }
+
+    @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if(msg instanceof RpcResponse){
+        if (msg instanceof RpcResponse) {
             RpcResponse response = (RpcResponse) msg;
             DefaultFuture defaultFuture = futureMap.get(response.getRequestId());
             defaultFuture.setRpcResponse(response);
@@ -34,22 +43,22 @@ public class ClientHandler extends ChannelDuplexHandler {
         super.channelRead(ctx, msg);
     }
 
-
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        if(msg instanceof RpcRequest){
+        if (msg instanceof RpcRequest) {
             RpcRequest request = (RpcRequest) msg;
             futureMap.putIfAbsent(request.getRequestId(), new DefaultFuture());
         }
         super.write(ctx, msg, promise);
     }
 
-    public RpcResponse getRpcResponse(String requestId){
+
+    public RpcResponse getRpcResponse(String requestId) {
         try {
             DefaultFuture defaultFuture = futureMap.get(requestId);
             log.info(String.valueOf(futureMap.size()));
-            return defaultFuture.getRpcResponse(5000);
-        }finally {
+            return defaultFuture.getRpcResponse(1000);
+        } finally {
             futureMap.remove(requestId);
         }
     }

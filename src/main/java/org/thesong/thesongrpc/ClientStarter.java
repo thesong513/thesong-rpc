@@ -1,9 +1,7 @@
-package org.thesong.thesongrpc.demo;
+package org.thesong.thesongrpc;
 
 import lombok.extern.slf4j.Slf4j;
 import org.thesong.thesongrpc.client.ProxyFactory;
-import org.thesong.thesongrpc.client.RpcClientDynamicProxy;
-import org.thesong.thesongrpc.client.RpcProxy;
 import org.thesong.thesongrpc.service.SomeService;
 
 import java.lang.reflect.Proxy;
@@ -16,13 +14,6 @@ import java.lang.reflect.Proxy;
  */
 @Slf4j
 public class ClientStarter {
-//    public static void main(String[] args) {
-//        final String host = "127.0.0.1";
-//        final int port = 8088;
-//        SomeService service = RpcProxy.getRemoteProxyObj(SomeService.class, host, port);
-//        String add = service.hello("thesong");
-//        log.info(add);
-//    }
     public static void main(String[] args) {
         final String host = "127.0.0.1";
         final int port = 8080;

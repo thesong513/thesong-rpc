@@ -2,6 +2,7 @@ package org.thesong.thesongrpc.server;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.thesong.thesongrpc.common.RpcRequest;
@@ -18,38 +19,42 @@ import java.util.Map;
  */
 @Slf4j
 @ChannelHandler.Sharable
-public class ServerHandler extends SimpleChannelInboundHandler<RpcRequest> {
+public class ServerHandler extends ChannelInboundHandlerAdapter {
 
     private Map<String, Object> registerMap = new HashMap<>();
 
-    public ServerHandler(Map<String, Object> registerMap){
+    public ServerHandler(Map<String, Object> registerMap) {
         this.registerMap = registerMap;
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, RpcRequest msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object object) throws Exception {
         log.info("msg received！");
         RpcResponse rpcResponse = new RpcResponse();
-        rpcResponse.setRequestId(msg.getRequestId());
-        try {
-            Object result = handleMessage(msg);
-            rpcResponse.setResult(result);
-        }catch (Throwable throwable){
-            rpcResponse.setError(throwable.toString());
-            throwable.printStackTrace();
+        if(object instanceof RpcRequest) {
+            RpcRequest msg = (RpcRequest) object;
+            rpcResponse.setRequestId(msg.getRequestId());
+            try {
+                Object result = handleMessage(msg);
+                rpcResponse.setResult(result);
+            } catch (Throwable throwable) {
+                rpcResponse.setError(throwable.toString());
+                throwable.printStackTrace();
+            }
         }
         ctx.writeAndFlush(rpcResponse);
     }
 
+
     private Object handleMessage(RpcRequest msg) throws Throwable {
         Object result = "no corresponding service or method! ";
         try {
-            if(registerMap.containsKey(msg.getClassName())){
+            if (registerMap.containsKey(msg.getClassName())) {
                 Object provider = registerMap.get(msg.getClassName());
                 result = provider.getClass().getMethod(msg.getMethodName(), msg.getParameterTypes())
                         .invoke(provider, msg.getParameters());
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             throw new RpcException("rpc call error!");
         }

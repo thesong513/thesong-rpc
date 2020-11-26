@@ -23,8 +23,8 @@ public class RpcClientDynamicProxy<T> implements InvocationHandler {
 
     public RpcClientDynamicProxy(Class<T> clazz, String host, int port) {
         this.clazz = clazz;
-        this.host=host;
-        this.port=port;
+        this.host = host;
+        this.port = port;
     }
 
     @Override

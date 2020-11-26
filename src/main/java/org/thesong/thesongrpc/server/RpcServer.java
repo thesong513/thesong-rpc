@@ -6,6 +6,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import lombok.extern.slf4j.Slf4j;
 import org.thesong.thesongrpc.common.RpcDecoder;
 import org.thesong.thesongrpc.common.RpcEncoder;
@@ -81,27 +82,32 @@ public class RpcServer {
     }
 
 
-    public void start(){
+    public void start() throws InterruptedException {
+        ServerHandler serverHandler = new ServerHandler(registerMap);
         ioGroup = new NioEventLoopGroup();
         workerGroup = new NioEventLoopGroup();
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap.group(ioGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG,1024)
+                .option(ChannelOption.SO_REUSEADDR,true)
+                .childOption(ChannelOption.TCP_NODELAY,true)
+                .childOption(ChannelOption.SO_KEEPALIVE,true)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         ChannelPipeline pipeline = socketChannel.pipeline();
+                        pipeline.addLast(new LengthFieldBasedFrameDecoder(65535, 0, 4));
                         pipeline.addLast(new RpcEncoder(RpcResponse.class, new JSONSerializer()));
                         pipeline.addLast(new RpcDecoder(RpcRequest.class, new JSONSerializer()));
-                        pipeline.addLast();
+                        pipeline.addLast(serverHandler);
                     }
                 });
         bind(serverBootstrap, host, port);
     }
 
-    public void bind(final ServerBootstrap serverBootstrap ,String host, int port){
-        serverBootstrap.bind(host,port).addListener(future -> {
+    public void bind(final ServerBootstrap serverBootstrap ,String host, int port) throws InterruptedException {
+        serverBootstrap.bind(host,port).sync().addListener(future -> {
             if(future.isSuccess()){
                 log.info("server is running @ {}:{}",host, port);
             }else {
