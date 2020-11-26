@@ -11,7 +11,7 @@ import java.io.IOException;
 public interface Serializer {
 
     //序列化 java转二进制
-    byte[] serialize(Object object) throws IOException;
+    <T> byte[] serialize(T t, Class<T> clazz) throws IOException;
 
     //二进制转java
     <T> T deserialize(byte[] bytes, Class<T> clazz) throws IOException;

@@ -12,12 +12,12 @@ import java.util.List;
  * @Version 1.0
  * @Describe
  */
-public class RpcDecoder extends ByteToMessageDecoder {
+public class RpcDecoder<T> extends ByteToMessageDecoder {
 
-    private Class<?> clazz;
+    private Class<T> clazz;
     private Serializer serializer;
 
-    public RpcDecoder(Class<?> clazz, Serializer serializer) {
+    public RpcDecoder(Class<T> clazz, Serializer serializer) {
         this.clazz = clazz;
         this.serializer = serializer;
     }

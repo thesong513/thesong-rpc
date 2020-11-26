@@ -30,11 +30,14 @@
         <netty.version>4.1.54.Final</netty.version>
         <protobuf.version>3.14.0</protobuf.version>
         <slf4j-log4j12.version>1.7.30</slf4j-log4j12.version>
+        <protostuff-runtime.version>1.7.2</protostuff-runtime.version>
+        <protostuff-core.version>1.7.2</protostuff-core.version>
+        <kryo.version>4.0.1</kryo.version>
+        <kryo-shaded.version>4.0.1</kryo-shaded.version>
     </properties>
 
     <dependencies>
 
-        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
@@ -55,6 +58,31 @@
             <version>${fastjson.verson}</version>
             <scope>compile</scope>
         </dependency>
+
+        <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-core</artifactId>
+            <version>${protostuff-core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-runtime</artifactId>
+            <version>${protostuff-runtime.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>${kryo.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo-shaded</artifactId>
+            <version>${kryo-shaded.version}</version>
+        </dependency>
+
 
         <dependency>
             <groupId>io.netty</groupId>

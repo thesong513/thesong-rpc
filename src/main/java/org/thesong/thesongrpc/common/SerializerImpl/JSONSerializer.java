@@ -13,8 +13,8 @@ import java.io.IOException;
  */
 public class JSONSerializer implements Serializer {
     @Override
-    public byte[] serialize(Object object) throws IOException {
-        return JSON.toJSONBytes(object);
+    public <T> byte[] serialize(T t , Class<T> clazz) throws IOException {
+        return JSON.toJSONBytes(t);
     }
 
     @Override

@@ -13,6 +13,8 @@ import org.thesong.thesongrpc.common.RpcEncoder;
 import org.thesong.thesongrpc.common.RpcRequest;
 import org.thesong.thesongrpc.common.RpcResponse;
 import org.thesong.thesongrpc.common.SerializerImpl.JSONSerializer;
+import org.thesong.thesongrpc.common.SerializerImpl.KryoSerializer;
+import org.thesong.thesongrpc.common.SerializerImpl.ProtoBufSerializer;
 
 import javax.annotation.PreDestroy;
 import java.io.File;
@@ -98,8 +100,8 @@ public class RpcServer {
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         ChannelPipeline pipeline = socketChannel.pipeline();
                         pipeline.addLast(new LengthFieldBasedFrameDecoder(65535, 0, 4));
-                        pipeline.addLast(new RpcEncoder(RpcResponse.class, new JSONSerializer()));
-                        pipeline.addLast(new RpcDecoder(RpcRequest.class, new JSONSerializer()));
+                        pipeline.addLast(new RpcEncoder(RpcResponse.class, new KryoSerializer()));
+                        pipeline.addLast(new RpcDecoder(RpcRequest.class, new KryoSerializer()));
                         pipeline.addLast(serverHandler);
                     }
                 });
