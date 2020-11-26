@@ -38,6 +38,7 @@ public class RpcClientDynamicProxy<T> implements InvocationHandler {
         RpcClient client = new RpcClient(host, port);
         client.connect();
         RpcResponse response = client.send(rpcRequest);
+        client.close();
         return response.getResult();
     }
 }

@@ -61,14 +61,12 @@ public class RpcClient {
 
     private void connect(Bootstrap bootstrap, String host, int port, int retry) throws  Exception{
         ChannelFuture channelFuture = bootstrap.connect(host, port).sync().addListener(future -> {
-            if (future.isSuccess()) {
-                log.info("successfully connect to server!");
-            } else if (retry == 0) {
-                log.error("The maximum number of connections has been reached! ");
+            if (future.isSuccess()) {} else if (retry == 0) {
+                log.error("已经达到最大连接次数！ ");
             } else {
                 int order = MAX_RETRY - retry + 1;
                 int delay = 1 << order;
-                log.error("{} : fail connect, then will connect {} times ...", new Date(), order);
+                log.error("{} : 连接失败，还会尝试{}次连接 ...", new Date(), order);
                 bootstrap.config().group().schedule(() -> {
                     try {
                         connect(bootstrap, host, port, retry - 1);

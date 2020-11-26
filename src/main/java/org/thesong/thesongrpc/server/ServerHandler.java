@@ -27,9 +27,11 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         this.registerMap = registerMap;
     }
 
+
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object object) throws Exception {
-        log.info("msg received！");
+        log.info("msg received from {}", ctx.channel().remoteAddress());
         RpcResponse rpcResponse = new RpcResponse();
         if(object instanceof RpcRequest) {
             RpcRequest msg = (RpcRequest) object;
@@ -47,7 +49,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 
 
     private Object handleMessage(RpcRequest msg) throws Throwable {
-        Object result = "no corresponding service or method! ";
+        Object result = "没有与msg对应的服务或方法！ ";
         try {
             if (registerMap.containsKey(msg.getClassName())) {
                 Object provider = registerMap.get(msg.getClassName());
@@ -61,5 +63,8 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         return result;
     }
 
-
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.warn("发现有客户端断开连接{}:{}", ctx.channel().remoteAddress(),cause.toString());
+    }
 }

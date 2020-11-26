@@ -25,12 +25,13 @@ public class ClientHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log.info("连接成功");
+        log.info("成功连接上RPC服务器 {}",ctx.channel().remoteAddress());
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        log.info("连接断开");
+        log.warn("断开与RPC服务器的连接 {}",ctx.channel().remoteAddress());
+        super.channelInactive(ctx);
     }
 
     @Override
@@ -56,7 +57,6 @@ public class ClientHandler extends ChannelDuplexHandler {
     public RpcResponse getRpcResponse(String requestId) {
         try {
             DefaultFuture defaultFuture = futureMap.get(requestId);
-            log.info(String.valueOf(futureMap.size()));
             return defaultFuture.getRpcResponse(1000);
         } finally {
             futureMap.remove(requestId);

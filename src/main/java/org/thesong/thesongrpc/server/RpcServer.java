@@ -49,7 +49,7 @@ public class RpcServer {
     public void publish(String basePackage) throws Exception {
         getProviderClass(basePackage);
         doRegister();
-        log.info("registe finished!");
+        log.info("注册完成，共计{}个服务",registerMap.size());
     }
 
     private void getProviderClass(String basePackage) {
@@ -111,7 +111,7 @@ public class RpcServer {
             if(future.isSuccess()){
                 log.info("server is running @ {}:{}",host, port);
             }else {
-                log.error("port [ {} ] bind failed!",port);
+                log.error("port {} is binded ! retry port {}",port, port+1);
                 bind(serverBootstrap,host,port+1);
             }
         });

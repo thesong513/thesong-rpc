@@ -19,6 +19,7 @@ public class ClientStarter {
         final int port = 8080;
         SomeService service = ProxyFactory.create(SomeService.class, host, port);
         log.info(service.hello("lusong"));
+
     }
 
 }
