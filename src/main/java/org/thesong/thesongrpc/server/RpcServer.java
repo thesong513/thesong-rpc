@@ -119,7 +119,6 @@ public class RpcServer {
         });
     }
 
-    @PreDestroy
     public void close() throws InterruptedException {
         ioGroup.shutdownGracefully().sync();
         workerGroup.shutdownGracefully().sync();

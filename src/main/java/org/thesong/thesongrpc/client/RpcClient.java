@@ -90,7 +90,6 @@ public class RpcClient {
         return clientHandler.getRpcResponse(rpcRequest.getRequestId());
     }
 
-    @PreDestroy
     public void close() throws InterruptedException {
         eventLoopGroup.shutdownGracefully();
         channel.closeFuture().sync();
