@@ -17,7 +17,8 @@ public class ClientStarter {
     public static void main(String[] args) {
         final String host = "127.0.0.1";
         final int port = 8080;
-        SomeService service = ProxyFactory.create(SomeService.class, host, port);
+        ProxyFactory<SomeService> proxyFactory = new ProxyFactory<>(SomeService.class, host, port);
+        SomeService service = proxyFactory.create(SomeService.class, host, port);
         log.info(service.hello("lusong"));
 
     }
